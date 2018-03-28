@@ -230,6 +230,12 @@ Printer.prototype.setLineSpacing = function(lineSpacing) {
 	return this.writeCommands(commands);
 };
 
+Printer.prototype.endAndCut = function() {
+	var commands = [12, 27, 240, 6, 2, 2, 255];
+	return this.writeCommands(commands);
+};
+
+
 Printer.prototype.horizontalLine = function(length) {
 	var commands = [];
 	if (length > 0) {

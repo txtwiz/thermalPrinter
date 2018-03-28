@@ -300,6 +300,13 @@ describe('Printer', function() {
 		});
 	});
 
+	describe('Printer.endAndCut()', function() {
+		it('should add the right commands in the queue', function(done) {
+			var expected = [12, 27, 240, 6, 2, 2, 255];
+			verifyCommand(expected, 'endAndCut', null, done);
+		});
+	});
+
 	describe('Printer.horizontalLine()', function() {
 		it('should add the right commands in the queue', function(done) {
 			var expected = [196, 196, 196, 10];
