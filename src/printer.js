@@ -53,8 +53,9 @@ var Printer = function(serialPort, opts) {
 	// chinese firmware, for some reasons some thermal printers come with a firmware that don't handle all latin chars
 	// but we can do some hacky stuff to have almost every chars
 	this.chineseFirmware = opts.chineseFirmware || false;
-	// charset (USA: 0, by default, will switch to print special chars)
-	this.charset = 0;
+	// charset (USA: 1, by default, will switch to print special chars)
+	// x56
+	this.charset = 1;
 	// command queue
 	this.commandQueue = [];
 	// printmode bytes (normal by default)
@@ -117,11 +118,12 @@ Printer.prototype.reset = function() {
 	return this.writeCommands(commands);
 };
 
-Printer.prototype.setCharset = function(code) {
-	this.charset = code;
-	var commands = [27, 82, this.charset];
-	return this.writeCommands(commands);
-};
+// Override by x56
+// Printer.prototype.setCharset = function(code) {
+// 	this.charset = code;
+// 	var commands = [27, 82, this.charset];
+// 	return this.writeCommands(commands);
+// };
 
 Printer.prototype.setCharCodeTable = function(code) {
 	var commands = [27, 116, code];
@@ -229,12 +231,6 @@ Printer.prototype.setLineSpacing = function(lineSpacing) {
 	var commands = [27, 51, lineSpacing];
 	return this.writeCommands(commands);
 };
-
-Printer.prototype.endAndCut = function() {
-	var commands = [12, 27, 240, 6, 2, 2, 255];
-	return this.writeCommands(commands);
-};
-
 
 Printer.prototype.horizontalLine = function(length) {
 	var commands = [];
@@ -503,5 +499,65 @@ Printer.prototype.barcode = function(type, data) {
 	}
 	return this.writeCommands(commands);
 };
+
+/* x56 specific command*/
+Printer.prototype.reset = function() {
+	var commands = [24];
+	return this.writeCommands(commands);
+}
+
+Printer.prototype.setCharset = function(code) {
+	this.charset = code;
+	var commands = [ 27, 37, this.charset ];
+	return this.writeCommands(commands);
+}
+
+Printer.prototype.endAndCut = function() {
+	var commands = [12, 27, 240, 6, 2, 2, 255];
+	return this.writeCommands(commands);
+};
+
+// 1 <= h <= 4 (default = 1)
+Printer.prototype.barcodeWidth = function(w) {
+	if(w > 4  || w < 1) {
+		throw new Error('Width must be 1 <= width <= 4');
+	}
+	var commands = [29, 109, w];
+	return this.writeCommands(commands);
+};
+
+// Subtitle style
+// type can be:
+// 0 : disable
+// 1 : 8x16 primary
+// 3 : 12x24 primary
+// 5 : 16x32 primary
+// 7 : 20x40 primary
+// 9 : 8x16 secondary
+// 11 : 12x24 secondary
+// 13 : 16x32 secondary
+// 15 : 20x40 secondary
+Printer.prototype.barcodeSubtitle = function(n) {
+	if (n !== 0 && n !== 1 && n !== 3 && n !== 5 && n !== 7 && n !== 9 &&
+		n !== 11 && n !== 13 && n !==15) {
+			throw new Error('Barcode subtitle type must be 0,1,3,5,7,9,11,13,15');
+		}
+	var commands = [27, 240, 8, 1, n];
+	return this.writeCommands(commands);
+}
+
+// Barcode position
+// 0 <= n1 <= 255
+// 0 <= n2 <= 255
+// 0 <= m1 <= 40
+// 0 <= m2 <= 255
+Printer.prototype.barcodePosition = function(n1, n2, m1, m2) {
+if (n1 < 0 || n1 > 255 || n2 < 0 || n2 > 255 ||
+	m1 < 0 || m1 > 40 || m2 < 0 || m2 > 255) {
+		throw new Error('Barcode position error');
+	}
+	var commands = [27, 36, n1, n2, m1, m2];
+	return this.writeCommands(commands);
+}
 
 module.exports = Printer;
